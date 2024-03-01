@@ -73,34 +73,31 @@ Inventory.create([
   });
 
   app.post('/addItemsToCart', async (req, res) => {
-    
-    console.log(res)
-    const { cart_no, product_id } = req.body;
-    const id = {};
-    if (product_id) id.product_id = product_id;
-  
-    // Check if cartNumber already exists in TemporaryTable
-    const existingCart = await TemporaryTable.findOne({ cartNumber: cart_no });
-  
-    if (existingCart) {
-      // Cart exists, add items to the existing cart
-      const data = await Inventory.find(id);
-      
-      // Update the existing entry by adding new items
-      await TemporaryTable.updateOne(
-        { cartNumber: cart_no },
-        { $push: { items: data } }
-      );
-    } else {
-      const data = await Inventory.find(id);
-      await TemporaryTable.create({
-        cartNumber: cart_no,
-        items: data,
-      });
+    try {
+        const { cart_no, product_id } = req.body;
+
+        // Check if cartNumber already exists in TemporaryTable
+        let existingCart = await TemporaryTable.findOne({ cartNumber: cart_no });
+
+        if (!existingCart) {
+            existingCart = await TemporaryTable.create({ cartNumber: cart_no, items: [] });
+        }
+
+        const item = await Inventory.findOne({ product_id });
+        if (!item) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        existingCart.items.push(item);
+        await existingCart.save();
+
+        res.json("Successfully inserted the Item");
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-  
-    res.json("Successfully inserted the Item");
-  });
+});
+
 
   app.post('/TempItems', async (req, res) => {
     try {
