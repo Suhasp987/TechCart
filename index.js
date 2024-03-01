@@ -16,16 +16,16 @@ app.get('/', (req, res) => {
     res.send('Hello World');
 });
 
-app.post('/addItemsToCart', async (req, res) => {
-    try {
-        const { cart_no, product_id } = req.body;
-        console.log(cart_no, product_id);
-        res.json(`${cart_no} ${product_id} Successfully inserted the Item`);
-    } catch (e) {
-        console.log(e);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// app.post('/addItemsToCart', async (req, res) => {
+//     try {
+//         const { cart_no, product_id } = req.body;
+//         console.log(cart_no, product_id);
+//         res.json(`${cart_no} ${product_id} Successfully inserted the Item`);
+//     } catch (e) {
+//         console.log(e);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// });
 
 Inventory.create([
     {
@@ -73,6 +73,8 @@ Inventory.create([
   });
 
   app.post('/addItemsToCart', async (req, res) => {
+    
+    console.log(res)
     const { cart_no, product_id } = req.body;
     const id = {};
     if (product_id) id.product_id = product_id;
@@ -100,6 +102,27 @@ Inventory.create([
     res.json("Successfully inserted the Item");
   });
 
+  app.post('/TempItems', async (req, res) => {
+    try {
+      const { cartNumber } = req.body;
+  
+      if (!cartNumber) {
+        return res.status(400).json('Cart number is required');
+      }
+  
+      const temporaryTableData = await TemporaryTable.findOne({ cartNumber:cartNumber });
+       console.log("table",temporaryTableData)
+      if (temporaryTableData===null) {
+        return res.status(404).json("null");
+        
+      }
+  
+      res.json(temporaryTableData);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json('Internal Server Error');
+    }
+  });
 
 app.listen(5000, () => {
     console.log('app is running');
