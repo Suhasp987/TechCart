@@ -91,7 +91,7 @@ Inventory.create([
         existingCart.items.push(item);
         await existingCart.save();
 
-        res.json("Successfully inserted the Item");
+        res.json(existingCart);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
