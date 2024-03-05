@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 const Inventory=require('./models/Inventory.jsx')
 const TemporaryTable=require('./models/Temporarytable.jsx');
-const mongoURI="mongodb+srv://vaishnavivijay432:TechCart%40579@cluster0.nn0brsh.mongodb.net/Customer"
+const mongoURI="mongodb+srv://suhas123p:Suhas%40123@doctorappointment.xlmvnb7.mongodb.net/Customer"
 // Use body-parser middleware to parse JSON
 app.use(bodyParser.json());
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
