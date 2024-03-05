@@ -7,8 +7,14 @@ const Key_ID="rzp_test_L1JPeGnZbS2ffv";
 const Secret="kM3HWuzLYF6xiljfsJmi0mir";
 // Use CORS middleware
 app.use(cors());
+
+const CustomerModel  = require('./models/Customer.jsx')
+const CartModel= require('./models/Items.jsx');
+const CartItems=require('./models/CartItems.jsx')
+const History=require('./models/History.jsx');
 const Inventory=require('./models/Inventory.jsx')
-const TemporaryTable=require('./models/Temporarytable.jsx');
+const TemporaryTable=require('./models/Temporarytable.jsx')
+const TransactionModel = require('./models/Transaction.jsx');
 const mongoURI="mongodb+srv://suhas123p:Suhas%40123@doctorappointment.xlmvnb7.mongodb.net/Customer"
 // Use body-parser middleware to parse JSON
 app.use(bodyParser.json());
