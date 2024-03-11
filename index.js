@@ -72,37 +72,39 @@ app.get('/', (req, res) => {
         existingCart.items = existingCart.items.filter(item => item !== null);
 
         const product_id = Tagid.product_id;
-        
 
-       
-        
-        const existingTagIndex = existingCart.items.findIndex(existingItem => existingItem.tag_id === tag_id);
+        const existingTagIndex = existingCart.items.findIndex(existingItem => existingItem.tag_id.includes(tag_id));
 
         if (existingTagIndex !== -1) {
-            
-            existingCart.items.splice(existingTagIndex, 1);
-            
-        }
-        else{
-        const itemIndex = existingCart.items.findIndex(existingItem => existingItem.product_id === Number(product_id) );
+            // If tag_id is present, remove it from tag_id array and decrement quantity
+            existingCart.items[existingTagIndex].tag_id = existingCart.items[existingTagIndex].tag_id.filter(tag => tag !== tag_id);
+            existingCart.items[existingTagIndex].Quantity--;
 
-        if (itemIndex !== -1) {
-   
-                existingCart.items[itemIndex].Quantity++;
-         }else {
-            console.log(Tagid.product_id);
-
-            const newItem = await Inventory.findOne({ product_id });
-            console.log("item", newItem);
-
-            if (!newItem) {
-                return res.status(404).json({ error: 'Item not found' });
+            if (existingCart.items[existingTagIndex].Quantity === 0) {
+                // If quantity becomes 0, remove the item from the array
+                existingCart.items.splice(existingTagIndex, 1);
             }
-            const Quantity = 1;
+        } else {
+            const itemIndex = existingCart.items.findIndex(existingItem => existingItem.product_id === Number(product_id));
 
-            // Add the new item to the cart
-            existingCart.items.push({ ...newItem.toObject(), tag_id, Quantity });
-        }}
+            if (itemIndex !== -1) {
+                // If product_id is present, increment the quantity
+                existingCart.items[itemIndex].tag_id.push(tag_id);
+                existingCart.items[itemIndex].Quantity++;
+                
+            } else {
+                const newItem = await Inventory.findOne({ product_id });
+
+                if (!newItem) {
+                    return res.status(404).json({ error: 'Item not found' });
+                }
+
+                const Quantity = 1;
+
+                // Add only tag_id to the tag_id array and decrement quantity by 1
+                existingCart.items.push({ ...newItem.toObject(), tag_id: [tag_id], Quantity });
+            }
+        }
 
         await existingCart.save();
 
