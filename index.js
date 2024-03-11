@@ -3,6 +3,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose=require("mongoose");
 const app = express();
+const Razorpay=require("razorpay")
+
+const crypto = require("crypto");
 const Key_ID="rzp_test_L1JPeGnZbS2ffv";
 const Secret="kM3HWuzLYF6xiljfsJmi0mir";
 // Use CORS middleware
@@ -15,6 +18,7 @@ const History=require('./models/History.jsx');
 const Inventory=require('./models/Inventory.jsx')
 const TemporaryTable=require('./models/Temporarytable.jsx')
 const TransactionModel = require('./models/Transaction.jsx');
+const TagModel=require('./models/TagId.jsx');
 const mongoURI="mongodb+srv://suhas123p:Suhas%40123@doctorappointment.xlmvnb7.mongodb.net/Customer"
 // Use body-parser middleware to parse JSON
 app.use(bodyParser.json());
@@ -34,38 +38,7 @@ app.get('/', (req, res) => {
 //     }
 // });
 
-Inventory.create([
-    {
-      product_id:"3E00BA0A4BC5",
-      Product:'Salt',
-      Price:'13',
-  
-    },
-    {
-      product_id:"3E00B9DCD18A",
-      Product:'Gold Winner',
-      Price:'135',
-      
-    },
-    {
-      product_id:'3E00B9869E9F',
-      Product:'Sugar',
-      Price:'50',
-      
-    },
-    {
-      product_id:'3E00B991B1A7',
-      Product:'Surf excel',
-      Price:'400',
-      
-    },
-    {
-      product_id:'3E005F8702E4',
-      Product:'Salt',
-      Price:'23',
-      
-    }
-  ])
+
   app.get('/Inventoryitem', async (req, res) => {
     try {
       // Fetch all items from the InventoryItem collection
@@ -74,34 +47,69 @@ Inventory.create([
       // Send the items in the response
       res.json(items);
     } catch (error) {
-      console.error(error);
+      console.log(error);
       res.status(500).send('Internal Server Error');
     }
   });
 
   app.post('/addItemsToCart', async (req, res) => {
     try {
-        const { cart_no, product_id } = req.body;
-
-        
+        const { cart_no, tag_id } = req.body;
+        let Tagid = await TagModel.findOne({ TagId: tag_id });
+        console.log(Tagid);
         let existingCart = await TemporaryTable.findOne({ cartNumber: cart_no });
 
         if (!existingCart) {
             existingCart = await TemporaryTable.create({ cartNumber: cart_no, items: [] });
         }
 
-        const item = await Inventory.findOne({ product_id });
-        if (!item) {
-            return res.status(404).json({ error: 'Item not found' });
+        // Check if existingCart.items is null and initialize it as an empty array
+        if (!existingCart.items) {
+            existingCart.items = [];
         }
 
-        existingCart.items.push(item);
+        // Filter out null values from existingCart.items array
+        existingCart.items = existingCart.items.filter(item => item !== null);
+
+        const product_id = Tagid.product_id;
+        
+
+       
+        
+        const existingTagIndex = existingCart.items.findIndex(existingItem => existingItem.tag_id === tag_id);
+
+        if (existingTagIndex !== -1) {
+            
+            existingCart.items.splice(existingTagIndex, 1);
+            
+        }
+        else{
+        const itemIndex = existingCart.items.findIndex(existingItem => existingItem.product_id === Number(product_id) );
+
+        if (itemIndex !== -1) {
+   
+                existingCart.items[itemIndex].Quantity++;
+         }else {
+            console.log(Tagid.product_id);
+
+            const newItem = await Inventory.findOne({ product_id });
+            console.log("item", newItem);
+
+            if (!newItem) {
+                return res.status(404).json({ error: 'Item not found' });
+            }
+            const Quantity = 1;
+
+            // Add the new item to the cart
+            existingCart.items.push({ ...newItem.toObject(), tag_id, Quantity });
+        }}
+
         await existingCart.save();
 
         res.json(existingCart);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.log(error);
+        res.status(500).json({ error: 'Internal serve error' });
     }
 });
 
@@ -158,11 +166,11 @@ Inventory.create([
   app.post('/histories', async (req, res) => {
     try {
       // Extract data from the request body
-      const { Date, Cartno, Name, Phone, Email, OrderId,Amount } = req.body;
-  
+      const { date, Cartno, Name, Phone, Email, OrderId,Amount } = req.body;
+      console.log(req.body);
       // Create a new History instance
       const newHistory = new History({
-        Date,
+        date,
         Cartno,
         Name,
         Phone,
@@ -218,19 +226,21 @@ Inventory.create([
   app.post('/filterHistory', async (req, res) => {
     try {
       const { date,cartNo, name, email, orderId, phoneNumber } = req.body;
-  
+      console.log(req.body);
       // Build the filter object based on the provided parameters
       const filter = {};
-      if (date) filter.Date = date;
+      console.log(typeof date);
+      
       if (cartNo) filter.Cartno=cartNo;
       if (name) filter.Name = name;
+      if (date) filter.date = date;
       if (email) filter.Email = email;
       if (orderId) filter.OrderId = orderId;
       if (phoneNumber) filter.Phone = phoneNumber;
-  
+       console.log(filter)
       // Query the History collection with the filter object
       const filteredData = await History.find(filter);
-  
+      console.log("filter",filteredData)
       res.json(filteredData);
     } catch (e) {
       console.error(error);
@@ -302,25 +312,7 @@ Inventory.create([
      })
   })
   
-  app.post("/order",async(req,res)=>{
-      try{
-      const razorpay=new Razorpay({
-           key_id:Key_ID,
-           key_secret:Secret,
-      });
-      const options=req.body;
-      const order = await razorpay.orders.create(options);
-  
-      if(!order){
-          return res.statusCode(500).send("Error");
-      }
-      res.json(order);
-      } 
-  catch(err){
-      console.log(err);
-      res.status(500).send("Error");
-  }}
-  )
+
   
   
   
@@ -328,7 +320,8 @@ Inventory.create([
   app.post("/validate",async(req,res)=>{
     console.log("validate started")
     const  {razorpay_order_id,razorpay_payment_id,razorpay_signature}=req.body;
-    const sha = crypto.createHmac("sha256",process.env.Secret);
+    
+    const sha = crypto.createHmac("sha256","kM3HWuzLYF6xiljfsJmi0mir");
     console.log("sha",sha)
     sha.update(`${razorpay_order_id}|${razorpay_payment_id}`);
     const digest=sha.digest("hex");
@@ -344,7 +337,29 @@ Inventory.create([
     })
   })
   
+  app.post("/order", async (req, res) => {
+    console.log("order");
+    try {
+      const razorpay = new Razorpay({
+        key_id: Key_ID,
+        key_secret: Secret,
+      });
   
+      console.log("entered the order");
+      const options = req.body;
+      const order = await razorpay.orders.create(options);
+      console.log(order);
+  
+      if (!order) {
+        return res.status(500).send("Error has occurred");
+      }
+  
+      res.json(order);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error has occurred");
+    }
+  });
   // Define the route to handle the API request
   app.post('/Transactions', async (req, res) =>{
     try {

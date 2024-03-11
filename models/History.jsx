@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const HistorySchema = new mongoose.Schema({
-    Date:String,
+    date:String,
     Cartno:String,
     Name:String,
     Phone:String,
